@@ -27,7 +27,7 @@ from PySide6.QtWidgets import (
 )
 
 APP_NAME = "WinSlide"
-__version__ = "1.0.3"
+__version__ = "1.0.4"
 APP_ID = "WinSlide"
 LEGACY_IDS = ("Gooner", "PhotoShuffle")
 IMAGE_EXTS = {".jpg", ".jpeg", ".png", ".bmp", ".gif", ".webp", ".tif", ".tiff"}
@@ -173,6 +173,55 @@ class ShuffleDeck:
 # --------------------------------------------------------------------------- #
 # Drawn icons (crisp at any DPI, no font dependence)
 # --------------------------------------------------------------------------- #
+SMALL_ICON_MAX = 48  # at or below this size, draw the simplified peach
+
+
+def draw_small_peach(p, size):
+    """Emoji-style peach filling the whole square, for tray/taskbar sizes."""
+    p.save()
+    p.scale(size / 16.0, size / 16.0)
+    p.setPen(Qt.NoPen)
+    body = QPainterPath(QPointF(8, 4.2))
+    body.cubicTo(5.6, 2.4, 0.4, 3.4, 0.8, 8.6)
+    body.cubicTo(1.1, 12.8, 4.6, 15.6, 8, 15.6)
+    body.cubicTo(11.4, 15.6, 14.9, 12.8, 15.2, 8.6)
+    body.cubicTo(15.6, 3.4, 10.4, 2.4, 8, 4.2)
+    p.setBrush(QColor("#F5A06B"))
+    p.drawPath(body)
+    shade = QPainterPath(QPointF(8, 4.2))
+    shade.cubicTo(10.4, 2.4, 15.6, 3.4, 15.2, 8.6)
+    shade.cubicTo(14.9, 12.8, 11.4, 15.6, 8, 15.6)
+    shade.cubicTo(9.8, 13, 10.6, 9.6, 9.9, 6.6)
+    shade.cubicTo(9.6, 5.4, 8.9, 4.6, 8, 4.2)
+    p.setBrush(QColor("#E8784F"))
+    p.drawPath(shade)
+    cleft = QPainterPath(QPointF(8, 4.8))
+    cleft.cubicTo(6.9, 7.6, 6.9, 11.6, 8, 14.8)
+    pen = QPen(QColor("#B4442C"), 1.3)
+    pen.setCapStyle(Qt.RoundCap)
+    p.setPen(pen)
+    p.setBrush(Qt.NoBrush)
+    p.drawPath(cleft)
+    p.setPen(Qt.NoPen)
+    for cx, cy, rx, ry, rot, col in ((5.4, 2.4, 3, 1.5, -25, "#639922"),
+                                     (10.4, 2.2, 2.6, 1.3, 20, "#3B6D11")):
+        p.save()
+        p.translate(cx, cy)
+        p.rotate(rot)
+        p.setBrush(QColor(col))
+        p.drawEllipse(QRectF(-rx, -ry, 2 * rx, 2 * ry))
+        p.restore()
+    p.restore()
+
+
+def app_icon():
+    """Multi-size icon so Windows picks a sharp, size-appropriate image (tray, taskbar, window)."""
+    icon = QIcon()
+    for n in (16, 20, 24, 32, 40, 48, 64, 128, 256):
+        icon.addPixmap(make_icon("app", n).pixmap(n, n))
+    return icon
+
+
 def make_icon(kind, size=40, color=QColor(255, 255, 255)):
     pm = QPixmap(size, size)
     pm.fill(Qt.transparent)
@@ -194,6 +243,8 @@ def make_icon(kind, size=40, color=QColor(255, 255, 255)):
         p.drawPolygon(QPolygonF([QPointF(s * .26, s * .26), QPointF(s * .26, s * .74),
                                  QPointF(s * .62, s * .5)]))
         p.drawRoundedRect(QRectF(s * .64, s * .26, s * .1, s * .48), 2, 2)
+    elif kind == "app" and size <= SMALL_ICON_MAX:
+        draw_small_peach(p, size)
     elif kind == "app":  # peach photo stack (drawn on a 96-unit grid)
         k = s / 96.0
         p.scale(k, k)
@@ -314,7 +365,7 @@ class WinSlide(QWidget):
         super().__init__(None, Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint | Qt.Tool)
         self.setAttribute(Qt.WA_TranslucentBackground)
         self.setWindowTitle(APP_NAME)
-        self.setWindowIcon(make_icon("app", 64))
+        self.setWindowIcon(app_icon())
         self.setMinimumSize(MIN_SIZE)
         self.setMouseTracking(True)
 
@@ -696,7 +747,7 @@ class WinSlide(QWidget):
         self.tray = None
         if not QSystemTrayIcon.isSystemTrayAvailable():
             return
-        self.tray = QSystemTrayIcon(make_icon("app", 64), self)
+        self.tray = QSystemTrayIcon(app_icon(), self)
         self.tray.setToolTip(APP_NAME)
         self.tray_menu = QMenu()
         self.tray_menu.aboutToShow.connect(self._refresh_tray_menu)
