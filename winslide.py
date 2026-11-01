@@ -27,7 +27,7 @@ from PySide6.QtWidgets import (
 )
 
 APP_NAME = "WinSlide"
-__version__ = "1.0.2"
+__version__ = "1.0.3"
 APP_ID = "WinSlide"
 LEGACY_IDS = ("Gooner", "PhotoShuffle")
 IMAGE_EXTS = {".jpg", ".jpeg", ".png", ".bmp", ".gif", ".webp", ".tif", ".tiff"}
@@ -194,31 +194,53 @@ def make_icon(kind, size=40, color=QColor(255, 255, 255)):
         p.drawPolygon(QPolygonF([QPointF(s * .26, s * .26), QPointF(s * .26, s * .74),
                                  QPointF(s * .62, s * .5)]))
         p.drawRoundedRect(QRectF(s * .64, s * .26, s * .1, s * .48), 2, 2)
-    elif kind == "app":  # shuffled photo stack (drawn on a 96-unit grid)
+    elif kind == "app":  # peach photo stack (drawn on a 96-unit grid)
         k = s / 96.0
         p.scale(k, k)
         p.setBrush(QColor("#26215C"))
         p.drawRoundedRect(QRectF(0, 0, 96, 96), 18, 18)
         p.save()  # back card, tilted
-        p.translate(49, 39)
+        p.translate(49, 46)
         p.rotate(-10)
         p.setBrush(QColor("#7F77DD"))
-        p.drawRoundedRect(QRectF(-27, -21, 54, 42), 4, 4)
+        p.drawRoundedRect(QRectF(-27, -32, 54, 64), 5, 5)
         p.restore()
-        p.setBrush(QColor("#E1F5EE"))  # front photo
-        p.drawRoundedRect(QRectF(20, 28, 56, 44), 4, 4)
-        p.setBrush(QColor("#FAC775"))
-        p.drawEllipse(QPointF(60, 40), 6, 6)
-        p.setBrush(QColor("#1D9E75"))
-        p.drawPolygon(QPolygonF([QPointF(24, 68), QPointF(42, 46), QPointF(54, 60),
-                                 QPointF(60, 54), QPointF(72, 68)]))
-        pen = QPen(QColor("#FAC775"), 3.5)  # shuffle arrow
+        p.setBrush(QColor("#FBEAF0"))  # front card
+        p.drawRoundedRect(QRectF(20, 18, 56, 66), 5, 5)
+        p.save()  # the peach
+        p.translate(9, 6)
+        p.scale(0.82, 0.82)
+        body = QPainterPath(QPointF(48, 36))
+        body.cubicTo(36, 27, 21, 37, 25, 53)
+        body.cubicTo(28, 65, 39, 72, 48, 72)
+        body.cubicTo(57, 72, 68, 65, 71, 53)
+        body.cubicTo(75, 37, 60, 27, 48, 36)
+        p.setBrush(QColor("#F5A06B"))
+        p.drawPath(body)
+        shade = QPainterPath(QPointF(48, 36))
+        shade.cubicTo(60, 27, 75, 37, 71, 53)
+        shade.cubicTo(68, 65, 57, 72, 48, 72)
+        shade.cubicTo(54, 66, 58, 56, 56, 45)
+        shade.cubicTo(55, 40, 52, 37, 48, 36)
+        p.setBrush(QColor("#E8784F"))
+        p.drawPath(shade)
+        cleft = QPainterPath(QPointF(48, 38))
+        cleft.cubicTo(44, 47, 44, 60, 48, 70)
+        pen = QPen(QColor("#C4553A"), 2.5)
         pen.setCapStyle(Qt.RoundCap)
-        pen.setJoinStyle(Qt.RoundJoin)
         p.setPen(pen)
-        p.drawLine(QPointF(30, 82), QPointF(62, 82))
-        p.drawLine(QPointF(62, 82), QPointF(56, 77))
-        p.drawLine(QPointF(62, 82), QPointF(56, 87))
+        p.setBrush(Qt.NoBrush)
+        p.drawPath(cleft)
+        p.setPen(Qt.NoPen)
+        for cx, cy, rx, ry, rot, col in ((40, 31, 9, 4.5, -25, "#639922"),
+                                         (55, 30, 8, 4, 20, "#3B6D11")):
+            p.save()
+            p.translate(cx, cy)
+            p.rotate(rot)
+            p.setBrush(QColor(col))
+            p.drawEllipse(QRectF(-rx, -ry, 2 * rx, 2 * ry))
+            p.restore()
+        p.restore()
     p.end()
     return QIcon(pm)
 
