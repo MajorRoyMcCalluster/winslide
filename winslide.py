@@ -27,7 +27,7 @@ from PySide6.QtWidgets import (
 )
 
 APP_NAME = "WinSlide"
-__version__ = "1.0.1"
+__version__ = "1.0.2"
 APP_ID = "WinSlide"
 LEGACY_IDS = ("Gooner", "PhotoShuffle")
 IMAGE_EXTS = {".jpg", ".jpeg", ".png", ".bmp", ".gif", ".webp", ".tif", ".tiff"}
@@ -194,15 +194,31 @@ def make_icon(kind, size=40, color=QColor(255, 255, 255)):
         p.drawPolygon(QPolygonF([QPointF(s * .26, s * .26), QPointF(s * .26, s * .74),
                                  QPointF(s * .62, s * .5)]))
         p.drawRoundedRect(QRectF(s * .64, s * .26, s * .1, s * .48), 2, 2)
-    elif kind == "app":
-        p.setBrush(QColor(29, 158, 117))
-        p.drawRoundedRect(QRectF(s * .08, s * .16, s * .84, s * .68), s * .12, s * .12)
-        p.setBrush(QColor(250, 199, 117))
-        p.drawEllipse(QRectF(s * .58, s * .26, s * .18, s * .18))
-        p.setBrush(QColor(8, 80, 65))
-        p.drawPolygon(QPolygonF([QPointF(s * .08, s * .84), QPointF(s * .4, s * .44),
-                                 QPointF(s * .62, s * .7), QPointF(s * .74, s * .58),
-                                 QPointF(s * .92, s * .84)]))
+    elif kind == "app":  # shuffled photo stack (drawn on a 96-unit grid)
+        k = s / 96.0
+        p.scale(k, k)
+        p.setBrush(QColor("#26215C"))
+        p.drawRoundedRect(QRectF(0, 0, 96, 96), 18, 18)
+        p.save()  # back card, tilted
+        p.translate(49, 39)
+        p.rotate(-10)
+        p.setBrush(QColor("#7F77DD"))
+        p.drawRoundedRect(QRectF(-27, -21, 54, 42), 4, 4)
+        p.restore()
+        p.setBrush(QColor("#E1F5EE"))  # front photo
+        p.drawRoundedRect(QRectF(20, 28, 56, 44), 4, 4)
+        p.setBrush(QColor("#FAC775"))
+        p.drawEllipse(QPointF(60, 40), 6, 6)
+        p.setBrush(QColor("#1D9E75"))
+        p.drawPolygon(QPolygonF([QPointF(24, 68), QPointF(42, 46), QPointF(54, 60),
+                                 QPointF(60, 54), QPointF(72, 68)]))
+        pen = QPen(QColor("#FAC775"), 3.5)  # shuffle arrow
+        pen.setCapStyle(Qt.RoundCap)
+        pen.setJoinStyle(Qt.RoundJoin)
+        p.setPen(pen)
+        p.drawLine(QPointF(30, 82), QPointF(62, 82))
+        p.drawLine(QPointF(62, 82), QPointF(56, 77))
+        p.drawLine(QPointF(62, 82), QPointF(56, 87))
     p.end()
     return QIcon(pm)
 

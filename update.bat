@@ -12,6 +12,7 @@ set "TITLE=WinSlide"
 set "SRC=winslide.py"
 set "REPO=https://github.com/MajorRoyMcCalluster/winslide.git"
 set "PKGS=PySide6-Essentials pyinstaller"
+set "ICON=winslide.ico"
 title %TITLE% updater
 set "HERE=%~dp0"
 set "WORK=%LOCALAPPDATA%\%APPNAME%-build"
@@ -103,8 +104,10 @@ echo  Installing build tools (first run takes a minute or two)...
 "%VPY%" -m pip install --quiet --disable-pip-version-check --upgrade %USERFLAG% %PKGS% || goto :fail
 
 echo  Building %TITLE% %NEWVER%...
+set "ICONARG="
+if exist "%SRCDIR%%ICON%" set ICONARG=--icon "%SRCDIR%%ICON%"
 "%VPY%" -m PyInstaller --noconfirm --clean --onefile --windowed --log-level WARN ^
-    --name %APPNAME% ^
+    --name %APPNAME% %ICONARG% ^
     --workpath "%WORK%\build" --distpath "%WORK%\dist" --specpath "%WORK%" ^
     --exclude-module PySide6.QtNetwork --exclude-module PySide6.QtQml ^
     --exclude-module PySide6.QtQuick --exclude-module PySide6.QtSql ^
