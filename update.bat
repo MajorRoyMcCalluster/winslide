@@ -29,19 +29,26 @@ rem ---------- 1. latest source ----------
 set "SRCDIR="
 where git >nul 2>nul
 if errorlevel 1 goto :nogit
-if exist "%WORK%\src\.git" goto :pull
+if exist "%WORK%\src\.git" goto :fetch
 echo  Downloading %TITLE% from GitHub...
 echo  First time only: a GitHub sign-in window may open.
-git clone --quiet "%REPO%" "%WORK%\src"
+git clone --quiet "%REPO%" "%WORK%\src" 2>nul
 if errorlevel 1 goto :gitfail
-goto :gitok
-:pull
+goto :checksrc
+:fetch
 echo  Checking GitHub for updates...
-git -C "%WORK%\src" pull --ff-only --quiet
+git -C "%WORK%\src" fetch --quiet origin
 if errorlevel 1 goto :gitfail
-:gitok
+rem The local copy is only a cache, so always match GitHub exactly.
+git -C "%WORK%\src" checkout --quiet -B main origin/main 2>nul
+:checksrc
+if not exist "%WORK%\src\%SRC%" goto :emptyrepo
 set "SRCDIR=%WORK%\src\"
 goto :havesrc
+
+:emptyrepo
+echo  The GitHub repo has no code yet - building from the files next to this script.
+goto :localsrc
 
 :nogit
 echo  Git isn't installed, so updates can't be fetched from GitHub.
