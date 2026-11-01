@@ -27,6 +27,7 @@ from PySide6.QtWidgets import (
 )
 
 APP_NAME = "WinSlide"
+__version__ = "1.0.0"
 APP_ID = "WinSlide"
 LEGACY_IDS = ("Gooner", "PhotoShuffle")
 IMAGE_EXTS = {".jpg", ".jpeg", ".png", ".bmp", ".gif", ".webp", ".tif", ".tiff"}
@@ -81,6 +82,20 @@ def migrate_legacy():
                     winreg.SetValueEx(key, APP_ID, 0, winreg.REG_SZ, _launch_command())
             except OSError:
                 pass
+
+
+def refresh_startup_path():
+    """If start-with-Windows points at an old copy of the app, point it at this one."""
+    if not startup_enabled():
+        return
+    import winreg
+    try:
+        with winreg.OpenKey(winreg.HKEY_CURRENT_USER, RUN_KEY) as k:
+            cur = winreg.QueryValueEx(k, APP_ID)[0]
+        if cur != _launch_command():
+            set_startup(True)
+    except OSError:
+        pass
 
 
 def startup_enabled():
@@ -628,6 +643,10 @@ class WinSlide(QWidget):
 
         vis = m.addAction("Hide widget" if self.isVisible() else "Show widget",
                           self.toggle_visible)
+        m.addSeparator()
+        m.addAction("Run updater…", self.run_updater)
+        ver = m.addAction(f"{APP_NAME} v{__version__}")
+        ver.setEnabled(False)
         m.addAction("Quit", self.quit)
         return m
 
@@ -717,6 +736,18 @@ class WinSlide(QWidget):
         else:
             QDesktopServices.openUrl(QUrl.fromLocalFile(os.path.dirname(self.current_path)))
 
+    def run_updater(self):
+        """Launch update.bat from the install folder. The script, not this app, talks to GitHub."""
+        base = os.path.dirname(sys.executable if getattr(sys, "frozen", False)
+                               else os.path.abspath(__file__))
+        bat = os.path.join(base, "update.bat")
+        if sys.platform == "win32" and os.path.exists(bat):
+            os.startfile(bat)
+        elif self.tray:
+            self.tray.showMessage(APP_NAME, "update.bat not found next to the app. "
+                                  "Run update.bat from your download folder once to install it.",
+                                  QSystemTrayIcon.Information, 8000)
+
     def toggle_visible(self):
         self.setVisible(not self.isVisible())
 
@@ -734,6 +765,7 @@ def main():
     app.setApplicationName(APP_NAME)
     app.setQuitOnLastWindowClosed(False)
     migrate_legacy()
+    refresh_startup_path()
     w = WinSlide()
     w.start()
     sys.exit(app.exec())
