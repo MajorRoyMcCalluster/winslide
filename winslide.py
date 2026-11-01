@@ -14,7 +14,7 @@ import random
 import sys
 
 from PySide6.QtCore import (
-    QEasingCurve, QPoint, QPointF, QRect, QRectF, QSettings, QSize, Qt, QTimer,
+    QDir, QEasingCurve, QLockFile, QPoint, QPointF, QRect, QRectF, QSettings, QSize, Qt, QTimer,
     QUrl, QVariantAnimation, Signal,
 )
 from PySide6.QtGui import (
@@ -27,7 +27,7 @@ from PySide6.QtWidgets import (
 )
 
 APP_NAME = "WinSlide"
-__version__ = "1.0.0"
+__version__ = "1.0.1"
 APP_ID = "WinSlide"
 LEGACY_IDS = ("Gooner", "PhotoShuffle")
 IMAGE_EXTS = {".jpg", ".jpeg", ".png", ".bmp", ".gif", ".webp", ".tif", ".tiff"}
@@ -764,6 +764,10 @@ def main():
     app = QApplication(sys.argv)
     app.setApplicationName(APP_NAME)
     app.setQuitOnLastWindowClosed(False)
+    lock = QLockFile(QDir.temp().absoluteFilePath(f"{APP_ID}.lock"))
+    lock.setStaleLockTime(0)
+    if not lock.tryLock(200):
+        return  # already running
     migrate_legacy()
     refresh_startup_path()
     w = WinSlide()
