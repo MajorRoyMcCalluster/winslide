@@ -1,75 +1,86 @@
-"""Shared NOSTROMO.SYS Terminal design tokens (Qt-independent).
+"""NOSTROMO.VID design system for the WinSlide and ReelDeck desktop widgets.
 
-Keep these values synchronized across the desktop widget repositories.
-The original Retrowave and Colony palettes are intentionally untouched.
+Values are copied from NOSTROMO.VID/widget.py COLORWAYS; no theme is coupled
+to any playback, file scanning, networking or media state.
 """
 from __future__ import annotations
 
-BASE = {
-    "BG": "#080e0c",
-    "PANEL": "#0f1915",
-    "PANEL2": "#15211b",
-    "LINE": "#324037",
-    "INK": "#c7c9ad",
-}
-ACCENTS = {
-    "terminal_amber": {
-        "label": "Nostromo / Amber",
-        "accent": "#f0b04b", "bright": "#ffd587",
-        "low": "#9a7142", "alt": "#88d8bd",
+COLORWAYS = {
+    "Amber": {
+        "accent": "#e8b65e", "hi": "#ffe1a2", "muted": "#947954",
+        "edge": "#66522e", "dark": "#09100e", "panel": "#111a16",
+        "button": "#1d261e",
     },
-    "terminal_phosphor": {
-        "label": "Nostromo / Phosphor",
-        "accent": "#a8db87", "bright": "#d9fcb9",
-        "low": "#668962", "alt": "#88d8bd",
+    "Phosphor": {
+        "accent": "#a5d98b", "hi": "#d1f6b0", "muted": "#6f986a",
+        "edge": "#3f6844", "dark": "#07120c", "panel": "#0e1b12",
+        "button": "#1a2a1e",
     },
-    "terminal_red": {
-        "label": "Nostromo / Emergency Red",
-        "accent": "#ff7a65", "bright": "#ffc1a7",
-        "low": "#a9584d", "alt": "#8dcfd1",
+    "Monochrome": {
+        "accent": "#c0cec7", "hi": "#f2f5eb", "muted": "#8c9e96",
+        "edge": "#5c7067", "dark": "#0b1112", "panel": "#161e20",
+        "button": "#202b2c",
     },
 }
-TERMINAL_NAMES = frozenset(ACCENTS)
+THEME_CHOICES = ("Original", *COLORWAYS)
 
 
-def terminal_palette(name: str) -> dict[str, str]:
-    """Complete visual tokens. Unknown keys fail early rather than silently styling wrongly."""
-    if name not in ACCENTS:
-        raise ValueError(f"Unknown Nostromo theme: {name}")
-    return {**BASE, **ACCENTS[name]}
+def palette(name):
+    """Returns a defensive copy of the selected colourway, or None for Original."""
+    if name == "Original":
+        return None
+    if name not in COLORWAYS:
+        raise ValueError(f"Unknown Terminal theme: {name}")
+    return COLORWAYS[name].copy()
 
 
-def legacy_roles(name: str, *, quota: bool = False, cassette: bool = False) -> dict[str, str]:
-    """Adapt Nostromo tokens to the existing SENTRY/QUOTA/CASSETTE paint contracts."""
-    t = terminal_palette(name)
-    roles = {
-        "label": t["label"],
-        "BG": t["BG"], "BG2": t["PANEL"],
-        "MAG": t["accent"], "CYAN": t["bright"],
-        "YEL": t["alt"], "MUTE": t["low"],
-        "WARN": "#f0b04b", "CRIT": "#ff7a65",
-        "DIM": t["LINE"],
-    }
-    if quota:
-        roles["OK"] = t["alt"]
-    if cassette:
-        roles.update(SUN=t["bright"], GRID=t["accent"])
-    return roles
-
-
-def menu_stylesheet(name: str) -> str:
-    """High-contrast flat menus, matching the native NOSTROMO control surfaces."""
-    t = terminal_palette(name)
+def menu_stylesheet(name):
+    """Apply NOSTROMO.VID-style menu chrome to every existing action."""
+    c = palette(name)
+    if c is None:
+        return ""
     return (
-        "QMenu { background:" + t["PANEL2"] + "; color:" + t["bright"] +
-        "; border:1px solid " + t["LINE"] +
-        "; font-family:Consolas,monospace; font-size:12px; }"
-        "QMenu::item { padding:7px 24px; }"
-        "QMenu::item:selected { background:" + t["accent"] +
-        "; color:" + t["BG"] + "; }"
-        "QMenu::item:disabled { color:" + t["low"] + "; }"
-        "QMenu::separator { height:1px; background:" + t["LINE"] +
-        "; margin:5px 9px; }"
-        "QMenu::indicator:checked { background:" + t["accent"] +
-        "; border:1px solid " + t["accent"] + "; }"
+        f"QMenu {{background:{c['dark']};color:{c['hi']};"
+        f"border:1px solid {c['edge']};font:11px Consolas;padding:5px;}}"
+        "QMenu::item {padding:7px 22px;}"
+        f"QMenu::item:selected {{background:{c['accent']};color:{c['dark']};}}"
+        f"QMenu::item:disabled {{color:{c['muted']};}}"
+        f"QMenu::separator {{height:1px;background:{c['edge']};margin:4px 7px;}}"
+        f"QMenu::indicator:checked {{background:{c['accent']};border:1px solid {c['accent']};}}"
     )
+
+
+def paint_terminal_chrome(painter, width, height, name, title, status, subtitle):
+    """Draw Nostromo video terminal header/footer above an existing media view.
+
+    This does not alter mouse targets, viewport geometry or media pipelines.
+    Imported Qt objects live here to keep the palette independently testable.
+    """
+    c = palette(name)
+    if c is None or width < 140 or height < 100:
+        return
+    from PySide6.QtCore import QRectF, Qt
+    from PySide6.QtGui import QColor, QFont, QPen
+
+    p = painter
+    p.save()
+    dark, panel, edge = QColor(c["dark"]), QColor(c["panel"]), QColor(c["edge"])
+    bright, accent, muted = QColor(c["hi"]), QColor(c["accent"]), QColor(c["muted"])
+    p.setPen(Qt.NoPen)
+    p.fillRect(QRectF(0, 0, width, 35), panel)
+    p.fillRect(QRectF(0, height - 24, width, 24), dark)
+    p.setPen(QPen(edge, 1))
+    p.drawRect(QRectF(0.5, 0.5, width - 1, height - 1))
+    p.drawLine(1, 35, width - 1, 35)
+    p.drawLine(1, height - 24, width - 1, height - 24)
+    p.setFont(QFont("Consolas", 10, QFont.Bold))
+    p.setPen(bright)
+    p.drawText(QRectF(12, 2, max(0, width - 130), 30), Qt.AlignVCenter | Qt.AlignLeft, "◆ " + title)
+    p.setFont(QFont("Consolas", 8))
+    p.setPen(accent)
+    p.drawText(QRectF(max(0, width - 120), 2, 110, 30),
+               Qt.AlignRight | Qt.AlignVCenter, "● " + status)
+    p.setPen(muted)
+    p.drawText(QRectF(11, height - 24, max(0, width - 28), 23),
+               Qt.AlignLeft | Qt.AlignVCenter, subtitle)
+    p.restore()
