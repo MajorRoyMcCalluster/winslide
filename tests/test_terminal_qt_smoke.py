@@ -27,8 +27,8 @@ class QtTerminalSmokeTests(unittest.TestCase):
                 paint_terminal_chrome(painter, 480, 320, theme,
                                       "TEST.SYS", "READY", "MU/TH/UR 6000 // TEST")
                 painter.end()
-                self.assertEqual(image.pixelColor(100, 10), QColor(palette(theme)["panel"]))
-                self.assertEqual(image.pixelColor(100, 308), QColor(palette(theme)["dark"]))
+                self.assertEqual(image.pixelColor(300, 10), QColor(palette(theme)["panel"]))
+                self.assertEqual(image.pixelColor(450, 308), QColor(palette(theme)["dark"]))
                 self.assertEqual(image.pixelColor(100, 150), QColor("#112233"))
 
     def test_chrome_does_not_paint_in_original_mode(self):
