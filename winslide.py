@@ -13,6 +13,8 @@ import os
 import random
 import sys
 
+from terminal_theme import THEME_CHOICES, palette, menu_stylesheet, paint_terminal_chrome
+
 from PySide6.QtCore import (
     QDir, QEasingCurve, QLockFile, QPoint, QPointF, QRect, QRectF, QSettings, QSize, Qt, QTimer,
     QUrl, QVariantAnimation, Signal,
@@ -328,11 +330,17 @@ class IconButton(QWidget):
     def paintEvent(self, e):
         p = QPainter(self)
         p.setRenderHint(QPainter.Antialiasing)
-        if self.hover:
+        theme = palette(self.parent().parent().terminal_theme)
+        if theme:
+            p.setPen(QPen(QColor(theme["accent"] if self.hover else theme["edge"]), 1))
+            p.setBrush(QColor(theme["button"]))
+            p.drawRect(self.rect().adjusted(1, 1, -2, -2))
+        elif self.hover:
             p.setPen(Qt.NoPen)
             p.setBrush(QColor(255, 255, 255, 40))
             p.drawEllipse(self.rect().adjusted(1, 1, -1, -1))
-        make_icon(self.kind, 22).paint(p, QRect(6, 6, 22, 22))
+        color = QColor(theme["hi"]) if theme else QColor(255, 255, 255)
+        make_icon(self.kind, 22, color).paint(p, QRect(6, 6, 22, 22))
 
 
 class ControlBar(QWidget):
@@ -352,9 +360,14 @@ class ControlBar(QWidget):
         p = QPainter(self)
         p.setRenderHint(QPainter.Antialiasing)
         p.setPen(Qt.NoPen)
-        p.setBrush(QColor(0, 0, 0, 150))
+        theme = palette(self.parent().terminal_theme)
+        p.setBrush(QColor(theme["panel"]) if theme else QColor(0, 0, 0, 150))
         r = QRectF(self.rect())
-        p.drawRoundedRect(r, r.height() / 2, r.height() / 2)
+        if theme:
+            p.setPen(QPen(QColor(theme["edge"]), 1))
+            p.drawRect(r.adjusted(0.5, 0.5, -0.5, -0.5))
+        else:
+            p.drawRoundedRect(r, r.height() / 2, r.height() / 2)
 
 
 # --------------------------------------------------------------------------- #
@@ -376,6 +389,9 @@ class WinSlide(QWidget):
         self.fit_mode = self.settings.value("fit", "fill", str)  # fill | fit
         self.locked = self.settings.value("locked", False, bool)
         self.opacity_pct = int(self.settings.value("opacity", 100))
+        self.terminal_theme = self.settings.value("terminal_theme", "Original", str)
+        if self.terminal_theme not in THEME_CHOICES:
+            self.terminal_theme = "Original"
         self.paused = False
 
         self.deck = ShuffleDeck()
@@ -558,9 +574,13 @@ class WinSlide(QWidget):
         p.setRenderHint(QPainter.Antialiasing)
         p.setRenderHint(QPainter.SmoothPixmapTransform)
         path = QPainterPath()
-        path.addRoundedRect(QRectF(self.rect()), CORNER_RADIUS, CORNER_RADIUS)
+        themed = palette(self.terminal_theme)
+        if themed:
+            path.addRect(QRectF(self.rect()))
+        else:
+            path.addRoundedRect(QRectF(self.rect()), CORNER_RADIUS, CORNER_RADIUS)
         p.setClipPath(path)
-        p.fillPath(path, QColor(18, 18, 18))
+        p.fillPath(path, QColor(themed["dark"]) if themed else QColor(18, 18, 18))
 
         if self.cur_pix is not None:
             p.setOpacity(1.0)
@@ -571,7 +591,7 @@ class WinSlide(QWidget):
             p.setOpacity(1.0)
 
         if self.cur_pix is None and self.next_pix is None:
-            p.setPen(QColor(200, 200, 200))
+            p.setPen(QColor(themed["hi"]) if themed else QColor(200, 200, 200))
             f = QFont(self.font())
             f.setPointSize(10)
             p.setFont(f)
@@ -579,9 +599,15 @@ class WinSlide(QWidget):
                    if self.folder else "Right-click to choose a folder")
             p.drawText(self.rect(), Qt.AlignCenter, msg)
 
+        if themed:
+            message = "PAUSED" if self.paused else "ACTIVE"
+            subtitle = "MU/TH/UR 6000  //  " + (os.path.basename(self.current_path)[:40].upper() if self.current_path else "NO ARCHIVE MOUNTED")
+            paint_terminal_chrome(p, self.width(), self.height(), self.terminal_theme,
+                                  "WINSLIDE.SYS", message, subtitle)
+
         # Resize grip hint while hovered
         if self.underMouse() and not self.locked:
-            p.setPen(QPen(QColor(255, 255, 255, 150), 1.6))
+            p.setPen(QPen(QColor(themed["accent"]) if themed else QColor(255, 255, 255, 150), 1.6))
             r = self.rect()
             for i in (5, 10):
                 p.drawLine(r.right() - i - 3, r.bottom() - 4, r.right() - 4, r.bottom() - i - 3)
@@ -590,7 +616,7 @@ class WinSlide(QWidget):
     def _place_controls(self):
         self.controls.adjustSize()
         cw, ch = self.controls.width(), self.controls.height()
-        self.controls.move((self.width() - cw) // 2, self.height() - ch - 12)
+        self.controls.move((self.width() - cw) // 2, self.height() - ch - (30 if self.terminal_theme != "Original" else 12))
 
     def resizeEvent(self, e):
         self._place_controls()
@@ -655,6 +681,7 @@ class WinSlide(QWidget):
     # ---------------- menu ----------------
     def build_menu(self, parent=None):
         m = QMenu(parent or self)
+        m.setStyleSheet(menu_stylesheet(self.terminal_theme))
 
         m.addAction("Next image", self.next_image)
         m.addAction("Previous image", self.prev_image)
@@ -688,6 +715,15 @@ class WinSlide(QWidget):
         grp.addAction(custom)
         im.addAction(custom)
         m.addSeparator()
+
+        theme_menu = m.addMenu("Terminal theme")
+        theme_group = QActionGroup(theme_menu)
+        for name in THEME_CHOICES:
+            action = QAction(name, theme_menu, checkable=True)
+            action.setChecked(self.terminal_theme == name)
+            action.triggered.connect(lambda _=False, selected=name: self.set_terminal_theme(selected))
+            theme_group.addAction(action)
+            theme_menu.addAction(action)
 
         fm = m.addMenu("Image fit")
         fg = QActionGroup(fm)
@@ -801,6 +837,17 @@ class WinSlide(QWidget):
     def set_size(self, size):
         self.resize(size)
         self._save_geometry()
+
+    def set_terminal_theme(self, name):
+        if name not in THEME_CHOICES:
+            return
+        self.terminal_theme = name
+        self.settings.setValue("terminal_theme", name)
+        self._place_controls()
+        self.controls.update()
+        for button in (self.controls.prev_btn, self.controls.play_btn, self.controls.next_btn):
+            button.update()
+        self.update()
 
     def set_opacity(self, pct):
         self.opacity_pct = pct
