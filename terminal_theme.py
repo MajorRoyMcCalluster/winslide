@@ -70,6 +70,9 @@ def paint_terminal_chrome(painter, width, height, name, title, status, subtitle)
     p.fillRect(QRectF(0, 0, width, 35), panel)
     p.fillRect(QRectF(0, height - 24, width, 24), dark)
     p.setPen(QPen(edge, 1))
+    # Outline only: callers may leave a brush set (ReelDeck's hover controls do),
+    # which would otherwise flood-fill the whole media viewport.
+    p.setBrush(Qt.NoBrush)
     p.drawRect(QRectF(0.5, 0.5, width - 1, height - 1))
     p.drawLine(1, 35, width - 1, 35)
     p.drawLine(1, height - 24, width - 1, height - 24)
