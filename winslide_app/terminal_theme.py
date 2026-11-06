@@ -16,6 +16,11 @@ COLORWAYS = {
         "edge": "#3f6844", "dark": "#07120c", "panel": "#0e1b12",
         "button": "#1a2a1e",
     },
+    "Emergency Red": {
+        "accent": "#e8806e", "hi": "#ffc2b0", "muted": "#9c5a50",
+        "edge": "#6a3b33", "dark": "#100b0a", "panel": "#1a1211",
+        "button": "#2a1b19",
+    },
     "Monochrome": {
         "accent": "#c0cec7", "hi": "#f2f5eb", "muted": "#8c9e96",
         "edge": "#5c7067", "dark": "#0b1112", "panel": "#161e20",

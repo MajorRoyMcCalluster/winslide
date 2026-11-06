@@ -22,3 +22,8 @@ This repository is one of five Windows desktop widgets managed by the user's **N
 - Verify real Windows behaviour before declaring success: Preserve image fit, EXIF rotation, shuffle history, and Original appearance.
 - Windows executable builds, native events and video rendering are **not validated by isolated theme tests alone**.
 - Keep Retrowave/Vaporwave changes separate from Terminal UI work. All saved theme selections should remain backward compatible.
+
+## NOSTROMO.SUITE (feature/nostromo-suite)
+- Code lives in the `winslide_app` package (`winslide_app/app.py`); `winslide.py` is a thin entry shim, so builds and `update.bat` still target it.
+- Suite mode = launched with `--suite-pipe NAME --suite-theme amber|phosphor|red|mono`: no tray icon, no own startup entry or legacy migration, theme follows the suite (never saved), "Quit" reads "Close", rail readout via `suite_readout()`. Protocol: `winslide_app/suite_link.py` (vendored; keep identical across widgets).
+- New Emergency Red colourway (#e8806e). Standalone behaviour and QSettings ID `WinSlide` are unchanged.
