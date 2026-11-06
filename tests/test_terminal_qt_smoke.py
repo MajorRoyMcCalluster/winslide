@@ -39,6 +39,22 @@ class QtTerminalSmokeTests(unittest.TestCase):
         painter.end()
         self.assertEqual(image.pixelColor(100, 10), QColor("#112233"))
 
+    def test_chrome_frame_ignores_callers_leftover_brush(self):
+        # Regression: ReelDeck hover left a solid brush set, and the frame filled the video.
+        from PySide6.QtGui import QBrush
+        for theme in THEME_CHOICES:
+            if theme == "Original":
+                continue
+            with self.subTest(theme=theme):
+                image = QImage(480, 320, QImage.Format_ARGB32)
+                image.fill(QColor("#112233"))
+                painter = QPainter(image)
+                painter.setBrush(QBrush(QColor(palette(theme)["hi"])))
+                paint_terminal_chrome(painter, 480, 320, theme,
+                                      "TEST.SYS", "READY", "MU/TH/UR 6000 // TEST")
+                painter.end()
+                self.assertEqual(image.pixelColor(240, 160), QColor("#112233"))
+
 
 if __name__ == "__main__":
     unittest.main()
