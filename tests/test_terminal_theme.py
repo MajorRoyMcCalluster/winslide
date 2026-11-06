@@ -4,7 +4,7 @@ These deliberately avoid PySide6, codecs, network services and desktop state.
 """
 import unittest
 
-from terminal_theme import COLORWAYS, THEME_CHOICES, menu_stylesheet, palette
+from winslide_app.terminal_theme import COLORWAYS, THEME_CHOICES, menu_stylesheet, palette
 
 
 class TerminalThemeTests(unittest.TestCase):

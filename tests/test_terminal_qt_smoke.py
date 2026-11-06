@@ -8,7 +8,7 @@ from PySide6.QtCore import Qt
 from PySide6.QtGui import QColor, QImage, QPainter
 from PySide6.QtWidgets import QApplication
 
-from terminal_theme import THEME_CHOICES, palette, paint_terminal_chrome
+from winslide_app.terminal_theme import THEME_CHOICES, palette, paint_terminal_chrome
 
 
 class QtTerminalSmokeTests(unittest.TestCase):
